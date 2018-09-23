@@ -18,7 +18,7 @@ triguer_max = 1000
 triguer_min = 400
 triguer_test = 800
 t_trig = 0.02 # Tiempo que dura la senal de trigger
-
+delay_soft_default = 0.2 # Segundos. Es el tiempo estimado que se asume que tarda 
 
 # Definimos funciones utiles
 
@@ -48,11 +48,16 @@ def calculo_potencia(data,excluir=0.5):
 
 # Definimos funciones de usuario
 
-def playrec_onda(frec,amp=ampMax,long=long_d):
-    # pone una función onda y la graba al mismo tiempo. La salida de esta función es: un gráfico que muestra la señal que mandó y la que midió y el array correspondiente a la medición.
-    myrec=sd.playrec(Onda(frec,amp=amp,long=long),fs,channels=2)
+def playrecStereo (data,show=False):
+    myrec=sd.playrec(data,fs,channels=2)
     sd.wait()
-    plt.plot(myrec)
+    if show:
+        plt.figure()
+        plt.plot([dat[0] for dat in data], label = 'In1')
+        plt.plot([dat[1] for dat in data], label = 'In2')
+        plt.plot([data[0] for data in myrec], label = 'Out1')
+        plt.plot([data[1] for data in myrec], label = 'Out2')
+        plt.legend()
     return myrec
 
 def playrec (data,show=False):
@@ -95,8 +100,6 @@ def barrido_frecuencia_sin(frec_min=10,frec_max=1000000,pasos=1000,amp=ampMax,lo
         pot_out_ch1 = []
         pot_out_ch2 = []
         for frec in frecs:
-            if DEBUG:
-                print (frec)
             signal = Onda(frec)
             rec = playrec(signal)
             sd.wait()
@@ -113,8 +116,8 @@ def barrido_frecuencia_sin(frec_min=10,frec_max=1000000,pasos=1000,amp=ampMax,lo
         plt.legend()
         return frecs, [pot_in_ch1,pot_in_ch2],[pot_out_ch1,pot_out_ch2]
     
-def add_cola(signal, long=0.2):
-    ret=np.concatenate((np.zeros(int(np.round(long*fs))),signal,np.zeros(int(np.round(long*fs)))))
+def add_cola(signal, prelong=delay_soft_default, postlong = delay_soft_default):
+    ret=np.concatenate((np.zeros(int(np.round(prelong*fs))),signal,np.zeros(int(np.round(postlong*fs)))))
     return ret
 
 def gen_trigger(senal):
@@ -129,14 +132,6 @@ def gen_trigger(senal):
     else:
         return print('La cantidad de muestras de la señal no cumple el criterio de ser 10 veces mayor al tamaño de los triggers')
     
-def sync(signal):
-    print ('Funcion en desarrollo')
-    print ('Esta funcion asume que el Ch1 conecta directamente la salida de audio con la entrada de microfono, y que el Ch2 conecta la salida de audio con la entrada del dispositivo a caracterizar, cuya respuesta llega al Ch2 del microfono.')
-    rec=self.playrec(np.stack((add_cola(gen_trigger(senal)),add_cola(senal)),axis=-1))
-    sd.wait()
-    plt.figure(2),plt.plot(rec)
-    return rec
-
 def sync_test(signal):
     ratio_umbral=3
     import numpy
@@ -197,4 +192,94 @@ def sync_test(signal):
     plt.plot(convolucion)
     pos_max = np.argmax(convolucion)
     print ('pos max: ' + str(pos_max/fs))
+    
+def sync(signal,show=False):
+    ratio_umbral=3
+    import numpy
+    # Generamos la señal triguer a partir de la señal deseada.
+    trig = gen_trigger(signal)
+    # Aqui empezamos un loop previendo que haya un delay mas largo del esperado en el soft. 
+    trigguer_detected = False
+    extradelay = 0
+    while not trigguer_detected:
+        delay = delay_soft_default + extradelay
+        signal_toplay = add_cola(signal,delay_soft_default,delay)
+        trig_toplay = add_cola(trig,delay_soft_default,delay)
+        toplay = [[signal,trig] for signal,trig in zip(signal_toplay,trig_toplay)]
+        rec = playrecStereo(toplay,show=show)
+        rta = [data[0] for data in rec]
+        trigRta = [data[1] for data in rec]
+        if show:
+            plt.figure()
+            plt.plot(rta,label='Rta')
+            plt.plot(trigRta,label='Trig')
+            plt.legend()
+        t = numpy.fft.fft(trigRta)
+        if show:
+            plt.figure()
+            plt.plot(numpy.abs(t))
+        frec_min_esperada = triguer_min * len(trigRta)/fs
+        frec_max_esperada = triguer_max * len(trigRta)/fs
+        frec_test_esperada = triguer_test * len(trigRta)/fs
+        delta = int((frec_max_esperada-frec_min_esperada)/20)
+        if delta < 10:
+            print ('Error: la distancia entre los picos esperados en el triguer es muy cercana a cero.')
+            return
+        if frec_min_esperada < delta:
+            print ('Error: el ancho del pico minimo abarca al cero')
+            return
+        if frec_max_esperada > len(t) + delta:
+            print ('Error: el ancho del pico maximo abarca al borde')
+        if DEBUG:
+            print ('Pico 1 esperado en: ' + str(frec_min_esperada))
+            print ('Pico 2 esperado en: ' + str(frec_max_esperada))
+            print ('Pico no esperado en: ' + str(frec_test_esperada))
+        valor_pico_min = np.mean(np.abs(t[int(frec_min_esperada-delta):int(frec_min_esperada+delta)]))
+        valor_pico_max = np.mean(np.abs(t[int(frec_max_esperada-delta):int(frec_max_esperada+delta)]))
+        valor_pico_test = np.mean(np.abs(t[int(frec_test_esperada-delta):int(frec_test_esperada+delta)]))
+        if DEBUG:
+            print (valor_pico_min)
+            print (valor_pico_max)
+            print (valor_pico_test)
+        detectados = 0 
+        if valor_pico_min/valor_pico_test > ratio_umbral:
+            detectados += 1
+            print ('Primer pico detectado')
+        if valor_pico_max/valor_pico_test > ratio_umbral:
+            detectados += 1
+            print ('Segundo pico detectado')
+        if detectados == 2:
+            print ('Principio y fin de la señal detectadas')
+            trigguer_detected = True
+        else:
+            print ('Error, no se ha detectado el principio o fin de la señal en el Ch1.')
+            extradelay += delay_soft_default
+            if extradelay > 10 * delay_soft_default:
+                print ('Ha ocurrido un error, no se logra detectar bien el trigguer pese a esperar diez veces lo predeterminado')
+            print ('Cambiando tiempo de espera a: ' + str(extradelay))
+
+    # Detectamos ambos extremos y recortamos.
+    a_convolucionar = Onda(triguer_min,long=t_trig)
+    convolucion = np.convolve(np.flip(a_convolucionar),trigRta,'valid')  # Revisar porque funciona con un flip
+    if show:
+        plt.figure()
+        plt.plot(convolucion)
+    pos_max_ini = np.argmax(convolucion)
+    print ('Se ha detectado el inicio de la señal a los ' + str(pos_max_ini/fs) + ' segundos o en el frame: ' + str(pos_max_ini))
+    
+    a_convolucionar = Onda(triguer_max,long=t_trig)
+    convolucion = np.convolve(np.flip(a_convolucionar),trigRta,'valid')  # Revisar porque funciona con un flip
+    if show:
+        plt.figure()
+        plt.plot(convolucion)
+    pos_max_final = np.argmax(convolucion)
+    print ('Se ha detectado el fin de la señal a los ' + str(pos_max_final/fs) + ' segundos o en el frame: ' + str(pos_max_final))
+    rta = rta[pos_max_ini:pos_max_final]
+    if show:
+        plt.figure()
+        plt.plot(rta)
+    return rta
+    
+    
+    
     
