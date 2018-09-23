@@ -46,4 +46,6 @@ Cosas tomadas/mudadas/corregidas desde pruebainstru (que es el archivo con mas d
 
 Hasta aca ya revisamos todos los codigos de pruebaInstru. En test no hay nada que no sea redundante. Y lo mismo en p1.py
 
+23/9/18
 
+Ayer estuve desarrollando la version final del sync y parece funcionar.
