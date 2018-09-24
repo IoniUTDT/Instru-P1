@@ -7,7 +7,6 @@ Este archivo contiene las funciones desarrolladas para usar las entradas y salid
 import numpy as np
 import sounddevice as sd
 import matplotlib.pyplot as plt
-from tqdm import tqdm
 from scipy import signal
 
 # Definimos constantes
@@ -46,21 +45,27 @@ def calculo_potencia(data,excluir=0.5):
         plt.legend()
     return np.sum(data_recortada**2)/(len(data_recortada))
 
-def calculo_potencia_new(data):
-    pass
 
 # Definimos funciones de usuario
+
+def playrecStereo (data,show=False):
+    myrec=sd.playrec(data,fs,channels=2)
+    sd.wait()
+    if show:
+        plt.figure()
+        plt.plot([dat[0] for dat in data], label = 'In1')
+        plt.plot([dat[1] for dat in data], label = 'In2')
+        plt.plot([data[0] for data in myrec], label = 'Out1')
+        plt.plot([data[1] for data in myrec], label = 'Out2')
+        plt.legend()
+    return myrec
 
 def playrec (data,show=False):
     myrec=sd.playrec(data,fs,channels=2)
     sd.wait()
     if show:
         plt.figure()
-        if type (data[0]) == list:
-            plt.plot([dat[0] for dat in data], label = 'In1')
-            plt.plot([dat[1] for dat in data], label = 'In2')
-        else:
-            plt.plot(data, label = 'Input')
+        plt.plot(data, label = 'Input')
         plt.plot([data[0] for data in myrec], label = 'Ch1')
         plt.plot([data[1] for data in myrec], label = 'Ch2')
         plt.legend()
@@ -82,37 +87,35 @@ def Onda(frec,amp=ampMax,long=long_d):
     t=np.arange(long*fs)
     return amp*np.sin(2*np.pi*frec*t/fs)
 
-def RtaFrecuencia(frec_min=10,frec_max=1000000,pasos=1000,amp=ampMax,long=long_d, avance=False):
-    "Genera un vector de frecuencias entre la mínima y la máxima, con los pasos especificados. \
-    Manda funcines senoidales de esa frencuencia y graba la respuesta. \
-    Devuelve (por ahora) el vector de frecuencias y un gráfico que muestra la amplitud máxima registrada \
-    (puede mejorarse como la obtiene) en función de la frecuencia.CALCULAR LÍMITE TEORICO"
-    if DEBUG:
-        print ('Iniciando barrido en frecuencias')
-    frecs=np.logspace(np.log10(frec_min),np.log10(frec_max),num=pasos)
-    if DEBUG:
-        print ('frecuencias a testear')
-        print (frecs)
-    pot_in_ch1 = []
-    pot_in_ch2 = []
-    pot_out_ch1 = []
-    pot_out_ch2 = []
-    for count in tqdm(range(len(frecs))):
-        frec=frecs[count]
-        signal = Onda(frec)
-        rec = playrec(signal)
-        sd.wait()
-        pot_in_ch1 += [calculo_potencia(signal)]
-        pot_in_ch2 += [calculo_potencia(signal)]
-        pot_out_ch1 += [calculo_potencia(rec[:,0])]
-        pot_out_ch2 += [calculo_potencia(rec[:,1])]            
-    plt.plot(frecs,pot_in_ch1,label='In_Ch1')
-    plt.plot(frecs,pot_in_ch2,label='In_Ch2')
-    plt.plot(frecs,pot_out_ch1,label='Out_Ch1')
-    plt.plot(frecs,pot_out_ch2,label='Out_ch2')
-    plt.legend()
-    return frecs, [pot_in_ch1,pot_in_ch2],[pot_out_ch1,pot_out_ch2]
-
+def barrido_frecuencia_sin(frec_min=10,frec_max=1000000,pasos=1000,amp=ampMax,long=long_d):
+        "Genera un vector de frecuencias entre la mínima y la máxima, con los pasos especificados. Manda funcines senoidales de esa frencuencia y graba la respuesta. Devuelve (por ahora) el vector de frecuencias y un gráfico que muestra la amplitud máxima registrada (puede mejorarse como la obtiene) en función de la frecuencia.CALCULAR LÍMITE TEORICO"
+        if DEBUG:
+            print ('Iniciando barrido en frecuencias')
+        frecs=np.logspace(np.log10(frec_min),np.log10(frec_max),num=pasos)
+        if DEBUG:
+            print ('frecuencias a testear')
+            print (frecs)
+        pot_in_ch1 = []
+        pot_in_ch2 = []
+        pot_out_ch1 = []
+        pot_out_ch2 = []
+        for frec in frecs:
+            signal = Onda(frec)
+            rec = playrec(signal)
+            sd.wait()
+            pot_in_ch1 += [calculo_potencia(signal)]
+            pot_in_ch2 += [calculo_potencia(signal)]
+            pot_out_ch1 += [calculo_potencia(rec[:,0])]
+            pot_out_ch2 += [calculo_potencia(rec[:,1])]
+            print ('Evaluando frecuencia: ' + str(frec)) # Mejorar esta linea
+            
+        plt.plot(frecs,pot_in_ch1,label='In_Ch1')
+        plt.plot(frecs,pot_in_ch2,label='In_Ch2')
+        plt.plot(frecs,pot_out_ch1,label='Out_Ch1')
+        plt.plot(frecs,pot_out_ch2,label='Out_ch2')
+        plt.legend()
+        return frecs, [pot_in_ch1,pot_in_ch2],[pot_out_ch1,pot_out_ch2]
+    
 def add_cola(signal, prelong=delay_soft_default, postlong = delay_soft_default):
     ret=np.concatenate((np.zeros(int(np.round(prelong*fs))),signal,np.zeros(int(np.round(postlong*fs)))))
     return ret
@@ -203,7 +206,7 @@ def sync(signal,show=False):
         signal_toplay = add_cola(signal,delay_soft_default,delay)
         trig_toplay = add_cola(trig,delay_soft_default,delay)
         toplay = [[signal,trig] for signal,trig in zip(signal_toplay,trig_toplay)]
-        rec = playrec(toplay,show=show)
+        rec = playrecStereo(toplay,show=show)
         rta = [data[0] for data in rec]
         trigRta = [data[1] for data in rec]
         if show:

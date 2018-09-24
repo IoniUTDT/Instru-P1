@@ -49,3 +49,5 @@ Hasta aca ya revisamos todos los codigos de pruebaInstru. En test no hay nada qu
 23/9/18
 
 Ayer estuve desarrollando la version final del sync y parece funcionar.
+
+Estoy probando porque parece que no anda bien algo con el tema del filtro en frecuencias. Da una señal muy rara usando los cables que arme pero siempre la misma. Voy a ejecutar 
