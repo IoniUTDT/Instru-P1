@@ -50,4 +50,19 @@ Hasta aca ya revisamos todos los codigos de pruebaInstru. En test no hay nada qu
 
 Ayer estuve desarrollando la version final del sync y parece funcionar.
 
-Estoy probando porque parece que no anda bien algo con el tema del filtro en frecuencias. Da una señal muy rara usando los cables que arme pero siempre la misma. Voy a ejecutar 
+Estoy probando porque parece que no anda bien algo con el tema del filtro en frecuencias. Da una señal muy rara usando los cables que arme pero siempre la misma.
+
+24/8/18 
+
+Al final comprobe que era un problema del rango de frecuencias que es gigantesco, en el notebook Mediciones se puede ver que da identico con el cable bueno que con los armados.
+
+Ahora estuve retocando algunos detalles del codigo, de coherencia y nombres mas que nada y simplificando cosas. La mas importante es que la funcion potencia asume que se usa el playrec_sync en lugar de recortar arbitrariamente. 
+Acabo de hacer un test que se me habia ocurrido que era hacer un playrec_sync de una señal trigguer para ver si efectivamente recorta bien xq mandando una sinusoidal es dificil saber si no corta de mas y efectiovamente hay un error logico que es que recorta en el principio del trigguer del final y no en el final posta. SOLUCIONADO
+
+PENDIENTE: habria que hacer algun tipo de codigo para calibrar la escala (con un divisor de tensiones fijo asociado al USB) y otro para ver que no este saturando la entrada/salida (se puede ver como da la convolucion de una señal contra si misma y ver si a travez de la medicion en el chanel del trigguer varia mucho la forma). 
+
+Cambio el delay default para evitar que siempre se duplique el tiempo de medicion (en casa dio que el default era muy corto pero con el doble da mas o menos bien)
+
+Para poder usar el playrec_sync con el barrido de frecuencia tuve que agregar la opcion de alternar los canales en el playrec_sync porque sino no se puede evaluar ambos canales. Tambien voy a hacer que sea opcional testear ambos canales. Lo hice, por alguna razon extraña ahora tarda casi el doble en ejecutarse. Como windows tiene en el control de audio un indicador de si el microfono esta midiendo o no, pude observar que a diferencia de antes que hacia un play rec e inmediatamente otro, ahora hay un tiempo apreciable muerto entre cada registro del microfono, puede deberse a tiempos de ejecucion del sync. Por ahora no parece grave, pero estaria bueno ver que onda.
+
+Cambio que la escala del barrido en frecuencia sea log.
