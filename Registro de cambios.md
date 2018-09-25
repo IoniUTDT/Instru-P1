@@ -66,3 +66,11 @@ Cambio el delay default para evitar que siempre se duplique el tiempo de medicio
 Para poder usar el playrec_sync con el barrido de frecuencia tuve que agregar la opcion de alternar los canales en el playrec_sync porque sino no se puede evaluar ambos canales. Tambien voy a hacer que sea opcional testear ambos canales. Lo hice, por alguna razon extraña ahora tarda casi el doble en ejecutarse. Como windows tiene en el control de audio un indicador de si el microfono esta midiendo o no, pude observar que a diferencia de antes que hacia un play rec e inmediatamente otro, ahora hay un tiempo apreciable muerto entre cada registro del microfono, puede deberse a tiempos de ejecucion del sync. Por ahora no parece grave, pero estaria bueno ver que onda.
 
 Cambio que la escala del barrido en frecuencia sea log.
+
+25/9/18
+
+14:30
+Me di cuenta que tarda mas xq hay como 0.8 segundos de "cola en las señales", no esta claroq ue haga falta que sea tan larga la inicial y tampoco que sea tan largo el largo en el barrido en frecuencias xq ahora recorta bien! Voy a cambiar parametros a ver si funciona bien siendo mas rapido. Parece funcionar bien, lo unico, si pongo que los triguers sean de frecuencias altas empiezo a tener problemas con el fs de aliasing. Hay que considerar si eso no es el problema que se ve en parte de la mala respuesta en frecuencia. QUE ONDA QUE EL FS SEA 48000 Y EL LIMITE DEL AUDIBLE SEA 20000? 
+Despues de hacer varios cambios y ajustar, la señal medida mid 0.5 segundos, pero la iteracion mide 1.6 segundos. Evidentemente el tiempo es tiempo de procesamiento. 
+
+Agregamos una opcion plot en el playrec_sync para que grafique el resultado ademas de devolver los datos.
