@@ -142,7 +142,7 @@ def sync_test(signal):
     import numpy
     print ('Funcion en desarrollo. Queremos probar implementar el sync salteando la medicion')
     trig = gen_trigger(signal)
-    trig = add_cola(trig)
+    trig = add_cola(add_cola(trig))
     plt.figure(1)
     plt.plot(signal)
     plt.plot(trig)
