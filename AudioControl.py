@@ -145,54 +145,6 @@ def playrec_sync(signal,show=False,alternar=False,plot=False):
     import numpy
     # Generamos la señal triguer a partir de la señal deseada.
     trig = gen_trigger(signal)
-<<<<<<< HEAD
-    trig = add_cola(add_cola(trig))
-    plt.figure(1)
-    plt.plot(signal)
-    plt.plot(trig)
-    #trig = trig[0:int(len(trig)/2)]
-    t = numpy.fft.fft(trig)
-    plt.figure(2)
-    plt.plot(numpy.abs(t))
-    frec_min_esperada = triguer_min * len(trig)/fs
-    frec_max_esperada = triguer_max * len(trig)/fs
-    frec_test_esperada = triguer_test * len(trig)/fs
-    delta = int((frec_max_esperada-frec_min_esperada)/20)
-    if delta < 10:
-        print ('Error: la distancia entre los picos esperados en el triguer es muy cercana a cero.')
-        return
-    if frec_min_esperada < delta:
-        print ('Error: el ancho del pico minimo abarca al cero')
-        return
-    if frec_max_esperada > len(t) + delta:
-        print ('Error: el ancho del pico maximo abarca al borde')
-        
-    print ('Pico 1 esperado en: ' + str(frec_min_esperada))
-    print ('Pico 2 esperado en: ' + str(frec_max_esperada))
-    print ('Pico no esperado en: ' + str(frec_test_esperada))
-    print (delta)
-    valor_pico_min = np.mean(np.abs(t[int(frec_min_esperada-delta):int(frec_min_esperada+delta)]))
-    valor_pico_max = np.mean(np.abs(t[int(frec_max_esperada-delta):int(frec_max_esperada+delta)]))
-    valor_pico_test = np.mean(np.abs(t[int(frec_test_esperada-delta):int(frec_test_esperada+delta)]))
-    print (valor_pico_min)
-    print (valor_pico_max)
-    print (valor_pico_test)
-    detectados = 0 
-    if valor_pico_min/valor_pico_test > ratio_umbral:
-        detectados += 1
-        print ('Primer pico detectado')
-    if valor_pico_max/valor_pico_test > ratio_umbral:
-        detectados += 1
-        print ('Segundo pico detectado')
-    if detectados == 2:
-        print ('Principio y fin de la señal detectadas')
-    else:
-        print ('Error, no se ha detectado el principio o fin de la señal en el Ch1.')
-        return 
-    frecuencia_arbitraria = 440
-    a_convolucionar = gen_trigger(Onda(frecuencia_arbitraria,long=t_trig*2))
-    a_convolucionar = a_convolucionar[0:int(len(a_convolucionar)/2)]
-=======
     # Aqui empezamos un loop previendo que haya un delay mas largo del esperado en el soft. 
     trigguer_detected = False
     delay = delay_soft_default
@@ -267,7 +219,6 @@ def playrec_sync(signal,show=False,alternar=False,plot=False):
                         print ('Cambiando tiempo de espera a: ' + str(delay))
 
     # Detectamos ambos extremos y recortamos.
->>>>>>> e850232d7934c86eec1d899fceabbc0a442fde26
     a_convolucionar = Onda(triguer_min,long=t_trig)
     convolucion = np.convolve(np.flip(a_convolucionar),trigRta,'valid')  # Revisar porque funciona con un flip
     if show:
