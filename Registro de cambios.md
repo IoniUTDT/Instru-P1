@@ -74,3 +74,8 @@ Me di cuenta que tarda mas xq hay como 0.8 segundos de "cola en las señales", n
 Despues de hacer varios cambios y ajustar, la señal medida mid 0.5 segundos, pero la iteracion mide 1.6 segundos. Evidentemente el tiempo es tiempo de procesamiento. 
 
 Agregamos una opcion plot en el playrec_sync para que grafique el resultado ademas de devolver los datos.
+
+3/10/18
+
+Luego de caracterizar las señales con un osciloscopio en la compu de Ioni que tiene tres conectores encontramos que con una señal de salida superior a 0.4 empieza a saturar la entrada, por lo que modificamos el valor default. 
+Cambiamos el numero de pasos en el barrido de frecuencias ara que sea mas corto, cambiamos la frec maxima a fs/2 para que no haya aliasing y tenga sentido la medicion. 

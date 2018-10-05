@@ -12,7 +12,7 @@ from scipy import signal
 
 # Definimos constantes
 fs = 48000
-ampMax = 0.5 # En valores arbitrarios float que es lo que recibe el paquetes sounddevice
+ampMax = 0.4 # En valores arbitrarios float que es lo que recibe el paquetes sounddevice
 long_d = 1 # En segundos defalut para mediciones
 long_frec = 0.1 #Segundos. Tiempo que duira la señal para hacer barrido en frecuencias. Es mas corto para evitar que el barrido tarde mucho al recorree muchas frecuencias. 
 DEBUG = False
@@ -38,14 +38,14 @@ def slewrate ():
     
 def calculo_potencia(data,excluir=0.5):
     # Data tiene que ser un array de dimension 1
-    if DEBUG:
-        print ('Largo original: ' + str(len(data)))
-        plt.plot(data,label='Original')
-    data_recortada = np.array(data[int(len(data)*excluir/2):int(len(data)-len(data)*excluir/2)])
-    if DEBUG:
-        print ('Largo recortado: ' + str(len(data_recortada)))
-        plt.plot(data_recortada,label='recortada')
-        plt.legend()
+    #if DEBUG:
+    #    print ('Largo original: ' + str(len(data)))
+    #    plt.plot(data,label='Original')
+    # data_recortada = np.array(data[int(len(data)*excluir/2):int(len(data)-len(data)*excluir/2)])
+    #if DEBUG:
+    #    print ('Largo recortado: ' + str(len(data_recortada)))
+    #    plt.plot(data_recortada,label='recortada')
+    #    plt.legend()
     # return np.sum(data_recortada**2)/(len(data_recortada))
     # Como ahora tenemos una funcion sync que mide exactamente la señal enviada podemos hacer la potencia de toda la señal.
     return np.sum(np.array(data)**2)/len(data)
@@ -83,7 +83,7 @@ def Onda(frec,amp=ampMax,long=long_d):
     t=np.arange(long*fs)
     return amp*np.sin(2*np.pi*frec*t/fs)
 
-def RtaFrecuencia(frec_min=1,frec_max=1000000,pasos=1000,amp=ampMax,long=long_frec,stereo=False):
+def RtaFrecuencia(frec_min=1,frec_max=fs/2,pasos=100,amp=ampMax,long=long_frec,stereo=False):
     "Genera un vector de frecuencias entre la mínima y la máxima, con los pasos especificados. \
     Manda funcines senoidales de esa frencuencia y graba la respuesta. \
     Devuelve (por ahora) el vector de frecuencias y un gráfico que muestra la amplitud máxima registrada \
@@ -164,14 +164,16 @@ def playrec_sync(signal,show=False,alternar=False,plot=False):
             rta = [data[1] for data in rec]
             trigRta = [data[0] for data in rec]
         if show:
-                    plt.figure()
-                    plt.plot(rta,label='Rta')
-                    plt.plot(trigRta,label='Trig')
-                    plt.legend()
+            plt.figure()
+            plt.plot(rta,label='Rta')
+            plt.plot(trigRta,label='Trig')
+            plt.legend()
+            plt.show()
         t = numpy.fft.fft(trigRta)
         if show:
-                    plt.figure()
-                    plt.plot(numpy.abs(t))
+            plt.figure()
+            plt.plot(numpy.abs(t))
+            plt.show()
         frec_min_esperada = triguer_min * len(trigRta)/fs
         frec_max_esperada = triguer_max * len(trigRta)/fs
         frec_test_esperada = triguer_test * len(trigRta)/fs
@@ -185,16 +187,16 @@ def playrec_sync(signal,show=False,alternar=False,plot=False):
         if frec_max_esperada > len(t) + delta:
             print ('Error: el ancho del pico maximo abarca al borde')
         if DEBUG:
-                    print ('Pico 1 esperado en: ' + str(frec_min_esperada))
-                    print ('Pico 2 esperado en: ' + str(frec_max_esperada))
-                    print ('Pico no esperado en: ' + str(frec_test_esperada))
+            print ('Pico 1 esperado en: ' + str(frec_min_esperada))
+            print ('Pico 2 esperado en: ' + str(frec_max_esperada))
+            print ('Pico no esperado en: ' + str(frec_test_esperada))
         valor_pico_min = np.mean(np.abs(t[int(frec_min_esperada-delta):int(frec_min_esperada+delta)]))
         valor_pico_max = np.mean(np.abs(t[int(frec_max_esperada-delta):int(frec_max_esperada+delta)]))
         valor_pico_test = np.mean(np.abs(t[int(frec_test_esperada-delta):int(frec_test_esperada+delta)]))
         if DEBUG:
-                    print (valor_pico_min)
-                    print (valor_pico_max)
-                    print (valor_pico_test)
+            print (valor_pico_min)
+            print (valor_pico_max)
+            print (valor_pico_test)
         detectados = 0 
         if valor_pico_min/valor_pico_test > ratio_umbral:
             detectados += 1
@@ -203,20 +205,20 @@ def playrec_sync(signal,show=False,alternar=False,plot=False):
         if valor_pico_max/valor_pico_test > ratio_umbral:
             detectados += 1
             if DEBUG:
-                        print ('Segundo pico detectado')
+                print ('Segundo pico detectado')
         if detectados == 2:
             if DEBUG:
-                        print ('Principio y fin de la señal detectadas')
+                print ('Principio y fin de la señal detectadas')
             trigguer_detected = True
         else:
             if DEBUG:
-                        print ('Error, no se ha detectado el principio o fin de la señal en el Ch1.')
+                print ('Error, no se ha detectado el principio o fin de la señal en el Ch1.')
             delay += extra_delay
             if delay > 5 * extra_delay:
                 print ('Ha ocurrido un error, no se logra detectar bien el trigguer pese a esperar cinco veces lo predeterminado')
                 return
             if DEBUG:
-                        print ('Cambiando tiempo de espera a: ' + str(delay))
+                print ('Cambiando tiempo de espera a: ' + str(delay))
 
     # Detectamos ambos extremos y recortamos.
     a_convolucionar = Onda(triguer_min,long=t_trig)
@@ -224,6 +226,7 @@ def playrec_sync(signal,show=False,alternar=False,plot=False):
     if show:
         plt.figure()
         plt.plot(convolucion)
+        plt.show()
     pos_max_ini = np.argmax(convolucion)
     if DEBUG:
         print ('Se ha detectado el inicio de la señal a los ' + str(pos_max_ini/fs) + ' segundos o en el frame: ' + str(pos_max_ini))
@@ -233,6 +236,7 @@ def playrec_sync(signal,show=False,alternar=False,plot=False):
     if show:
         plt.figure()
         plt.plot(convolucion)
+        plt.show()
     pos_max_final = np.argmax(convolucion)
     pos_max_final += int (t_trig*fs) # agregamos el tiempo que dura el triguer para no recortar cuando empieza.
     if DEBUG:
@@ -241,6 +245,7 @@ def playrec_sync(signal,show=False,alternar=False,plot=False):
     if show or plot:
         plt.figure()
         plt.plot(rta)
+        plt.show()
     return rta
     
     
