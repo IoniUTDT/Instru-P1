@@ -10,8 +10,8 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm
 from scipy import signal
 
-# Definimos constantes
-fs = 48000
+# Defniimos constantes
+fs = 192000
 ampMax = 0.4 # En valores arbitrarios float que es lo que recibe el paquetes sounddevice
 long_d = 1 # En segundos defalut para mediciones
 long_frec = 0.1 #Segundos. Tiempo que duira la señal para hacer barrido en frecuencias. Es mas corto para evitar que el barrido tarde mucho al recorree muchas frecuencias. 

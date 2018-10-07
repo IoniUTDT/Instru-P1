@@ -79,3 +79,7 @@ Agregamos una opcion plot en el playrec_sync para que grafique el resultado adem
 
 Luego de caracterizar las señales con un osciloscopio en la compu de Ioni que tiene tres conectores encontramos que con una señal de salida superior a 0.4 empieza a saturar la entrada, por lo que modificamos el valor default. 
 Cambiamos el numero de pasos en el barrido de frecuencias ara que sea mas corto, cambiamos la frec maxima a fs/2 para que no haya aliasing y tenga sentido la medicion. 
+
+6/10/18
+
+Despues de comprobar que en realidad podriamos haber medido siempre a 192kfs cambiamos el valor default, lo unico que la placa usada hasta el momento habia sido calibrada contra osciloscopio usando 48kfs
